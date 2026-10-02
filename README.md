@@ -18,6 +18,30 @@
 | Reporting | JSON, SARIF 2.1.0 and self-contained HTML reports |
 | Triage | Deterministic, explainable priority scoring |
 | Case digest | Metadata-only severity/category summaries for sharing |
+| Portable cases | Reproducible local artifact manifests with SHA-256 fingerprints |
+| Configuration | Local JSON limits for findings, artifact size and symlink behavior |
+
+## 2.2.0 highlights
+
+### 📦 Portable offline cases
+Create a reproducible case manifest from a local workspace:
+
+```bash
+hunt-sift inventory --input ./case --output ./case/index.json --case ./case/case.json
+hunt-sift --json case --input ./case/case.json
+```
+
+Case manifests contain artifact metadata and SHA-256 fingerprints only. They are explicitly marked `offline_only`.
+
+### ⚙️ Local configuration
+Use `.hunt-sift.json` or `--config` to control finding limits, workspace size limits, symlink handling and redaction policy.
+
+```bash
+hunt-sift --config ./examples/hunt-sift.json inventory --input ./case --case ./case/case.json
+```
+
+### 🧱 Large-artifact safety
+Workspace hashing now streams files in bounded chunks rather than loading complete artifacts into memory, while symlink traversal remains disabled by default.
 
 ## 2.1.24 highlights
 

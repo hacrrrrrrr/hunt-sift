@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0
+
+- Added portable offline case manifests with deterministic artifact fingerprints.
+- Added local JSON configuration and bounded workspace settings.
+- Workspace hashing now streams large files instead of loading them completely into memory.
+- Added explicit case inspection through the CLI.
+- Added regression coverage for case creation and round-trip loading.
+
+
 ## 2.1.24 — Input hardening and deterministic finding hygiene
 
 ### Security fixes

@@ -1,17 +1,28 @@
-- [x] Define offline-only inputs and explicitly exclude live scanning, request replay, execution, and exploitation.
-- [x] Create a standard-library Python CLI scaffold.
-- [x] Implement and test imported Nmap XML, HTTP export, and static-file analyzers.
-- [x] Document safe usage and push the private repository.
-- [x] Define offline-only Burp Suite XML and HAR import boundaries.
-- [x] Reorganize the parser and reporting code into maintainable modules.
-- [x] Add safe Burp XML and HAR review rules with fixture-based tests.
-- [x] Update documentation, validate the enhanced release, and push it to GitHub.
-- [x] Define safe local-only rules for CORS and potential exposed credential patterns.
-- [x] Create a comprehensive user manual and cross-platform installation helper.
-- [x] Add pattern rules with regression tests and sanitized analysis fixtures.
-- [x] Generate Burp XML and HAR sample reports, validate the release, and push the update.
-- [x] Initialize and validate a reusable offline security-artifact development skill.
-- [x] Add cautious local JWT and S3 public-access review rules with regression tests.
-- [x] Add a tag-triggered package and release workflow without publishing credentials.
-- [x] Create and preview a cyber-neon HTML documentation experience.
-- [x] Validate and push the completed Hunt Sift update.
+# Hunt Sift roadmap
+
+## v2.0–v2.1 — complete
+- [x] Offline-only artifact boundary
+- [x] Nmap, Burp, HAR, HTTP, source, JWT, GraphQL, OpenAPI and S3 review
+- [x] Redacted secrets review
+- [x] Endpoint/parameter mapping
+- [x] JSON, SARIF and HTML reporting
+- [x] Workspace inventory and deterministic triage
+- [x] Security hardening and fixture tests
+- [x] Release and CodeQL workflows
+
+## v2.2 — complete
+- [x] Portable offline case manifests
+- [x] Stable SHA-256 workspace fingerprints
+- [x] Streaming large-file hashing
+- [x] Local JSON configuration
+- [x] Configurable finding/artifact limits
+- [x] Explicit symlink policy
+- [x] Case inspection command
+- [x] Regression tests for case round-tripping
+
+## v2.3 direction
+- [ ] Incremental workspace index updates
+- [ ] Pluggable local report themes
+- [ ] More parser-specific provenance metadata
+- [ ] Optional encrypted-at-rest case bundles
+- [ ] Additional offline artifact formats
