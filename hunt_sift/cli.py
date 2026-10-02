@@ -12,6 +12,8 @@ from .core.risk_engine import prioritize, triage_summary
 from .core.request_review import analyze_request, safe_test_templates
 from .core.source_review import analyze_source
 from .core.workspace import index_directory, write_index
+from .core.case import write_case, load_case
+from .core.config import load as load_config
 from .core.io import read_text
 from .core.jwt_review import analyze_jwt
 from .core.graphql_review import analyze_graphql
@@ -39,6 +41,7 @@ def local_path(value: str) -> Path:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hunt-sift", description="Offline security workbench for researcher-supplied artifacts. No scanning, replay, execution, or network access.")
     parser.add_argument("--json", action="store_true", help="Print structured JSON where supported.")
+    parser.add_argument("--config", type=Path, help="Load local JSON configuration (default: .hunt-sift.json).")
     commands = parser.add_subparsers(dest="command", required=True)
     for name, help_text in (("nmap","Analyze a previously exported Nmap XML file."),("burp","Analyze a previously exported Burp Suite XML file."),("har","Analyze a previously saved HTTP Archive (HAR) file."),("http","Analyze a previously saved raw HTTP response."),("request","Analyze a previously saved raw HTTP request."),("s3","Analyze a previously exported S3-style bucket policy JSON file."),("static","Review local source with non-executing pattern checks."),("source","Analyze source or JavaScript with non-executing security rules."),("jwt","Decode and review a locally supplied JWT without verifying or transmitting it."),("graphql","Review a saved GraphQL request/query for security configuration cues."),("openapi","Review a saved OpenAPI/Swagger JSON specification."),("secrets","Scan local text for secret-like patterns with mandatory redaction.")):
         command = commands.add_parser(name, help=help_text)
@@ -48,7 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     templates = commands.add_parser("test-templates", help="Generate inert manual-review templates from a saved HTTP request.")
     templates.add_argument("--input", required=True, type=local_path)
     inventory = commands.add_parser("inventory", help="Build a local project index with SHA-256 fingerprints.")
-    inventory.add_argument("--input", required=True, type=local_path); inventory.add_argument("--output")
+    inventory.add_argument("--input", required=True, type=local_path); inventory.add_argument("--output"); inventory.add_argument("--case", help="Also write a portable offline case manifest.")
     search = commands.add_parser("search", help="Search a local inventory JSON file.")
     search.add_argument("--input", required=True, type=local_path); search.add_argument("--query", required=True)
     report = commands.add_parser("report", help="Convert saved findings into JSON, SARIF, or HTML.")
@@ -61,6 +64,8 @@ def build_parser() -> argparse.ArgumentParser:
     endpoints.add_argument("--input", required=True, type=local_path)
     params = commands.add_parser("params", help="Mine and classify parameter names from a local artifact.")
     params.add_argument("--input", required=True, type=local_path)
+    case_cmd = commands.add_parser("case", help="Inspect a previously created offline case manifest.")
+    case_cmd.add_argument("--input", required=True, type=local_path)
     commands.add_parser("boundaries", help="Print the tool's safety and authorization boundaries.")
     return parser
 
@@ -111,9 +116,18 @@ def deduplicate(leads: list[Lead]) -> list[Lead]:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        config = load_config(args.config) if args.config else load_config()
+        global MAX_FINDINGS, MAX_FINDING_FIELD_BYTES
+        MAX_FINDINGS = config.max_findings
+        MAX_FINDING_FIELD_BYTES = config.max_field_bytes
         if args.command == "inventory":
-            records = index_directory(args.input); write_index(records, args.output) if args.output else None
+            records = index_directory(args.input, max_bytes=config.workspace_max_bytes, follow_symlinks=config.follow_symlinks); write_index(records, args.output) if args.output else None
+            if args.case: write_case(args.case, records)
             print(json.dumps([r.__dict__ for r in records], indent=2) if args.json else f"Indexed {len(records)} local artifacts."); return 0
+        if args.command == "case":
+            payload = load_case(args.input)
+            print(json.dumps(payload, indent=2) if args.json else f"Case {payload['fingerprint']} — {payload['artifact_count']} artifacts — offline-only")
+            return 0
         if args.command == "search":
             data = json.loads(args.input.read_text(encoding="utf-8")); needle = args.query.casefold()
             rows = [r for r in data if needle in str(r.get("path", "")).casefold() or needle in str(r.get("kind", "")).casefold()]
