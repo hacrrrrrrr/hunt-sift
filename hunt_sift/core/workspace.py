@@ -21,8 +21,7 @@ def classify(path: Path) -> str:
     return names.get(path.suffix.lower(), "other")
 
 
-def index_directory(root: str | Path, max_bytes: int = 5_000_000) -> list[ArtifactRecord]:
-    """Index local files without executing or opening network resources."""
+def index_directory(root: str | Path, max_bytes: int = 5_000_000, follow_symlinks: bool = False) -> list[ArtifactRecord]:
     base = Path(root).expanduser().resolve()
     if not base.is_dir():
         raise ValueError(f"Workspace must be a local directory: {base}")
@@ -31,10 +30,16 @@ def index_directory(root: str | Path, max_bytes: int = 5_000_000) -> list[Artifa
     for path in sorted(p for p in base.rglob("*") if p.is_file()):
         if any(part in ignored for part in path.parts):
             continue
+        if not follow_symlinks and path.is_symlink():
+            continue
         size = path.stat().st_size
         if size > max_bytes:
             continue
-        records.append(ArtifactRecord(str(path.relative_to(base)), classify(path), size, hashlib.sha256(path.read_bytes()).hexdigest()))
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        records.append(ArtifactRecord(str(path.relative_to(base)), classify(path), size, digest.hexdigest()))
     return records
 
 
@@ -44,4 +49,4 @@ def search_records(records: list[ArtifactRecord], query: str) -> list[ArtifactRe
 
 
 def write_index(records: list[ArtifactRecord], output: str | Path) -> None:
-    Path(output).write_text(json.dumps([asdict(r) for r in records], indent=2), encoding="utf-8")
+    Path(output).write_text(json.dumps([asdict(r) for r in records], indent=2) + "\n", encoding="utf-8")
