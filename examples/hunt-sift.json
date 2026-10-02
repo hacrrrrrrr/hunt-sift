@@ -1,0 +1,7 @@
+{
+  "max_findings": 10000,
+  "max_field_bytes": 20000,
+  "workspace_max_bytes": 5000000,
+  "follow_symlinks": false,
+  "redact_evidence": true
+}
